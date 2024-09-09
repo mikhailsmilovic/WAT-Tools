@@ -1,9 +1,9 @@
 import pandas as pd
-import xlrd, datetime, os
-#xlrd.xlsx.ensure_elementtree_imported(False, None)
-#xlrd.xlsx.Element_has_iter = True
+import os, xlrd
+import numpy as np
 
-def read_observations_excel(observations_folder, Excel_two_first_rows_not_read=False):
+def read_observations_excel(observations_folder, skiprows=1):
+
 
     # Returns three arrays:
     #   Observations_namesLocations_array, [Stations[i], Latitudes[i], Longitudes[i]]_i
@@ -19,20 +19,18 @@ def read_observations_excel(observations_folder, Excel_two_first_rows_not_read=F
     # observations_folder
     # ↵ observations_locations.xlsx
     # ↵ Observations
-    #   ↵ StationName1.xlsx #two columns: Date, Observation
-    #   ↵ StationName2.xlsx #two columns: Date, Observation
-    #   ↵ ...
-
-    # for the following, set Excel_two_first_rows_not_read = True. 
-    # In this case, the headers can be anything, as they are not read. 
-    # Dates are to be in the first column, and observations in the second.
     #   ↵ StationName1.xlsx #first two rows not read
     #   ↵ StationName2.xlsx #first two rows not read
     #   ↵ ...
 
     # Read list of observation stations
 
-    Observations_namesLocations = pd.read_excel(observations_folder + '/observations_locations.xlsx', engine='openpyxl')
+    try: 
+        observations_list_file = os.path.join(observations_folder, 'observations_locations.csv')
+        Observations_namesLocations = pd.read_csv(observations_list_file)
+    except: 
+        observations_list_file = os.path.join(observations_folder, 'observations_locations.xlsx')
+        Observations_namesLocations = pd.read_excel(observations_list_file, engine='openpyxl')
 
     Stations = Observations_namesLocations['Station'].tolist()
     Latitudes = Observations_namesLocations['Latitude'].tolist()
@@ -48,7 +46,7 @@ def read_observations_excel(observations_folder, Excel_two_first_rows_not_read=F
     DATES_observed = []
     FLOWS_observed = []
 
-    observed_discharge_folder = observations_folder + '/Observations'
+    observed_discharge_folder = os.path.join(observations_folder, 'Observations')
     observed_folder_list = os.listdir(observed_discharge_folder)
 
     print('Loading observations')
@@ -56,21 +54,22 @@ def read_observations_excel(observations_folder, Excel_two_first_rows_not_read=F
     for discharge_location in Observations_namesLocations_array:
 
         if discharge_location[0] + '.xlsx' in observed_folder_list:
+            #book = xlrd.open_workbook(observed_discharge_folder + '/' + discharge_location[0] + '.xlsx')
+            #sheet = book.sheet_by_index(0)
+            #num_rows = sheet.nrows
 
-            if not Excel_two_first_rows_not_read:
-                # version 1 of observations: two headers Date, Observation
-                sheet = pd.read_excel(observed_discharge_folder + '/' + discharge_location[0] + '.xlsx')
 
-            else:
-                # version 2 of observations: no headers, first two rows are not read. 
-                # Dates in the first column and observations in the second.
-                sheet = pd.read_excel(observed_discharge_folder + '/' + discharge_location[0] + '.xlsx', 
-                                         header=None, skiprows=2, 
-                                         names=['Date', 'Observation'])
+            sheet = pd.read_excel(os.path.join(observed_discharge_folder, discharge_location[0] + '.xlsx'),
+                                     header=None, skiprows=skiprows,
+                                     names=['Date', 'Observation'])
 
-            sheet['Date'] = pd.to_datetime(sheet['Date']).dt.date
+
+            sheet['Date'] = pd.to_datetime(sheet['Date'], format='mixed', dayfirst=True).dt.date
             Dates_observed = sheet['Date'].tolist()
-            Flows_observed = sheet['Observation'].tolist()
+            Flows_observed = np.array(sheet['Observation'].tolist())
+
+            # negative values transformed to NaN
+            Flows_observed = np.where(Flows_observed >= 0, Flows_observed, np.nan)
 
             DATES_observed.append(Dates_observed)
             FLOWS_observed.append(Flows_observed)
@@ -81,3 +80,38 @@ def read_observations_excel(observations_folder, Excel_two_first_rows_not_read=F
             FLOWS_observed.append([])
 
     return Observations_namesLocations_array, DATES_observed, FLOWS_observed
+
+
+def read_simulations_excel(simulated_stations_folder, Observations_namesLocations_array, skiprows=1):
+
+    DATES_simulated = []
+    FLOWS_simulated = []
+    
+    simulated_stations_folder_list = os.listdir(simulated_stations_folder)
+    print('Loading simulations from Excel')
+
+    for discharge_location in Observations_namesLocations_array:
+
+        if discharge_location[0] + '.xlsx' in simulated_stations_folder_list:
+
+            sheet = pd.read_excel(os.path.join(simulated_stations_folder, discharge_location[0] + '.xlsx'),
+                                     header=None, skiprows=skiprows,
+                                     names=['Date', 'Observation'])
+
+
+            sheet['Date'] = pd.to_datetime(sheet['Date'], format='mixed', dayfirst=True).dt.date
+            Dates_simulated = sheet['Date'].tolist()
+            Flows_simulated = np.array(sheet['Observation'].tolist())
+
+            # negative values transformed to NaN
+            # Flows_simulated = np.where(Flows_simulated >= 0, Flows_simulated, np.nan)
+
+            DATES_simulated.append(Dates_simulated)
+            FLOWS_simulated.append(Flows_simulated)
+
+        else:
+            print('missing ' + discharge_location[0])
+            DATES_simulated.append([])
+            FLOWS_simulated.append([])
+            
+    return DATES_simulated, FLOWS_simulated
