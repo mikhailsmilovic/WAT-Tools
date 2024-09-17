@@ -53,13 +53,13 @@ def read_observations_excel(observations_folder, skiprows=1):
 
     for discharge_location in Observations_namesLocations_array:
 
-        if discharge_location[0] + '.xlsx' in observed_folder_list:
-            #book = xlrd.open_workbook(observed_discharge_folder + '/' + discharge_location[0] + '.xlsx')
+        if str(discharge_location[0]) + '.xlsx' in observed_folder_list:
+            #book = xlrd.open_workbook(observed_discharge_folder + '/' + str(discharge_location[0]) + '.xlsx')
             #sheet = book.sheet_by_index(0)
             #num_rows = sheet.nrows
 
 
-            sheet = pd.read_excel(os.path.join(observed_discharge_folder, discharge_location[0] + '.xlsx'),
+            sheet = pd.read_excel(os.path.join(observed_discharge_folder, str(discharge_location[0]) + '.xlsx'),
                                      header=None, skiprows=skiprows,
                                      names=['Date', 'Observation'])
 
@@ -75,7 +75,7 @@ def read_observations_excel(observations_folder, skiprows=1):
             FLOWS_observed.append(Flows_observed)
 
         else:
-            print('missing ' + discharge_location[0])
+            print('missing ' + str(discharge_location[0]))
             DATES_observed.append([])
             FLOWS_observed.append([])
 
@@ -92,9 +92,9 @@ def read_simulations_excel(simulated_stations_folder, Observations_namesLocation
 
     for discharge_location in Observations_namesLocations_array:
 
-        if discharge_location[0] + '.xlsx' in simulated_stations_folder_list:
+        if str(discharge_location[0]) + '.xlsx' in simulated_stations_folder_list:
 
-            sheet = pd.read_excel(os.path.join(simulated_stations_folder, discharge_location[0] + '.xlsx'),
+            sheet = pd.read_excel(os.path.join(simulated_stations_folder, str(discharge_location[0]) + '.xlsx'),
                                      header=None, skiprows=skiprows,
                                      names=['Date', 'Observation'])
 
@@ -110,7 +110,7 @@ def read_simulations_excel(simulated_stations_folder, Observations_namesLocation
             FLOWS_simulated.append(Flows_simulated)
 
         else:
-            print('missing ' + discharge_location[0])
+            print('missing ' + str(discharge_location[0]))
             DATES_simulated.append([])
             FLOWS_simulated.append([])
             
