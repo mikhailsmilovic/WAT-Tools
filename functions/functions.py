@@ -1,5 +1,5 @@
 import pandas as pd
-import os, xlrd
+import os #, xlrd
 import numpy as np
 
 def read_observations_excel(observations_folder, skiprows=1):
@@ -66,7 +66,9 @@ def read_observations_excel(observations_folder, skiprows=1):
 
             sheet['Date'] = pd.to_datetime(sheet['Date'], format='mixed', dayfirst=True).dt.date
             Dates_observed = sheet['Date'].tolist()
+            sheet['Observation'] = pd.to_numeric(sheet['Observation'])
             Flows_observed = np.array(sheet['Observation'].tolist())
+            
 
             # negative values transformed to NaN
             Flows_observed = np.where(Flows_observed >= 0, Flows_observed, np.nan)
